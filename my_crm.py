@@ -53,11 +53,6 @@ def round_rectangle(canvas, x1, y1, x2, y2, radius=25, **kwargs):
 
     return canvas.create_polygon(points, **kwargs, smooth=True)
 
-
-# style.configure('my_button', font =
-#                ('calibri', 10, 'bold', 'underline'),
-#                 foreground = 'red')
-
 homeFrame = Canvas(root, width=1920, height=1080)
 homeFrame.pack()
 
@@ -70,50 +65,52 @@ profileFrame = Canvas(root, width=1920, height=1080)
 try:
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
-    # cursor.execute('CREATE TABLE IF NOT EXISTS Clients (ID INTEGER PRIMARY KEY, Forename TEXT, Surname TEXT, Email TEXT, Phone TEXT, Address TEXT, Gender TEXT)')
     cursor.execute('CREATE TABLE IF NOT EXISTS Clients (ID INTEGER PRIMARY KEY, Forename TEXT, Surname TEXT, Email TEXT, Phone TEXT, Address TEXT, Birthday DATETIME, Gender TEXT, SignDate DATETIME)')
 except Error as e:
     print(e)
 
+
 def create_note(view, forename, surname):
-   client_name = forename + surname
+    client_name = forename + surname
+    current_directory = os.getcwd()
+    final_directory = os.path.join(current_directory, client_name)
+    if not os.path.exists(final_directory):
+        os.makedirs(final_directory)
 
-   current_directory = os.getcwd()
-   final_directory = os.path.join(current_directory, client_name)
-   if not os.path.exists(final_directory):
-      os.makedirs(final_directory)
+    filename = simpledialog.askstring("Create Note", "What would you like to name this note?", parent=view)
 
-   filename = simpledialog.askstring("Create Note", "What would you like to name this note?", parent=view)
-   if filename == None:
-       pass
-   else:
-       filename = filename.replace(" ", "_")
-       filename = filename.replace("/", "_")
-       file = final_directory + "/" + filename + ".txt"
-       while exists(file):
-           filename = simpledialog.askstring("Note Already Exists", "A note with this name already exists. Please enter a new name.", parent=view)
-           filename = filename.replace(" ", "_")
-           filename = filename.replace("/", "_")
-           file = final_directory + "/" + filename + ".txt"
-           if filename == None:
-               break
-           elif exists(file) == False:
-               break
+    if filename == None:
+        pass
 
-   if filename != None:
-       f = open(file, 'w')
+    else:
+        filename = filename.replace(" ", "_")
+        filename = filename.replace("/", "_")
+        file = final_directory + "/" + filename + ".txt"
+    while exists(file):
+        filename = simpledialog.askstring("Note Already Exists", "A note with this name already exists. Please enter a new name.", parent=view)
+        filename = filename.replace(" ", "_")
+        filename = filename.replace("/", "_")
+        file = final_directory + "/" + filename + ".txt"
+        if filename == None:
+            break
+        elif exists(file) == False:
+            break
 
-       try:
-           if sys.platform == "win32":
-               os.startfile(file)
-           else:
-               opener = "open" if sys.platform == "darwin" else "xdg-open"
-               subprocess.call([opener, file])
-       except Error:
-           pass
+    if filename != None:
+        f = open(file, 'w')
 
-   else:
-       pass
+        try:
+            if sys.platform == "win32":
+                os.startfile(file)
+            else:
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.call([opener, file])
+        except Error:
+            pass
+
+    else:
+        pass
+
 
 def edit_note(forename, surname):
     client_name = f"{forename} {surname}"
@@ -131,6 +128,7 @@ def edit_note(forename, surname):
             pass
     else:
         messagebox.showerror(title="Error", message="No saved notes for this client.")
+
 
 def scheduleAppointment(forename, surname):
     client_name = f"{forename} {surname}"
@@ -170,7 +168,6 @@ def scheduleAppointment(forename, surname):
     minute_form.place(x=300, y=650)
     Label(appointment, text="Minutes", font='None 20').place(x=300, y=700)
 
-
     ttk.Button(appointment, text="Submit", style='my.TButton', command=lambda: writeFile(data)).place(x=600, y=650)
 
     def writeFile(data):
@@ -199,55 +196,54 @@ def scheduleAppointment(forename, surname):
             f = open(file, 'w')
 
 def database(forename_form, surname_form, email_form, phone_form, address_form, clicked_year, clicked_month, clicked_day, gender_radio, clicked_sign_year, clicked_sign_month, clicked_sign_day):
+    cursor.row_factory = lambda cursor, row: row[0]
+    cursor.execute("SELECT id FROM Clients")
+    client_ids = cursor.fetchall()
 
-   cursor.row_factory = lambda cursor, row: row[0]
-   cursor.execute("SELECT id FROM Clients")
-   client_ids = cursor.fetchall()
+    if len(client_ids) == 10001:
+        print(client_ids)
+        print("No more unique ids")
+    else:
+        id = random.randint(0, 10000)
+        while id in client_ids:
+            id = random.randint(0, 10000)
 
-   if len(client_ids) == 10001:
-       print(client_ids)
-       print("No more unique ids")
-   else:
-       id = random.randint(0, 10000)
-       while id in client_ids:
-           id = random.randint(0, 10000)
+        forename = forename_form.get()
+        surname = surname_form.get()
+        email = email_form.get()
+        phone = phone_form.get()
+        address = address_form.get()
+        birth_year_form = clicked_year.get()
+        birth_month_form = clicked_month.get()
+        birth_day_form = clicked_day.get()
+        birthday = birth_year_form+'-'+birth_month_form+'-'+birth_day_form
+        gender = gender_radio.get()
+        if gender == 1:
+            gender = "Female"
+        elif gender == 2:
+            gender = "Male"
+        elif gender == 3:
+            gender = "Other"
+        elif gender == 4:
+            gender = "Undisclosed"
 
-       forename = forename_form.get()
-       surname = surname_form.get()
-       email = email_form.get()
-       phone = phone_form.get()
-       address = address_form.get()
-       birth_year_form = clicked_year.get()
-       birth_month_form = clicked_month.get()
-       birth_day_form = clicked_day.get()
-       birthday = birth_year_form+'-'+birth_month_form+'-'+birth_day_form
-       gender = gender_radio.get()
-       if gender == 1:
-           gender = "Female"
-       elif gender == 2:
-           gender = "Male"
-       elif gender == 3:
-           gender = "Other"
-       elif gender == 4:
-           gender = "Undisclosed"
+        sign_year_form = clicked_sign_year.get()
+        sign_month_form = clicked_sign_month.get()
+        sign_day_form = clicked_sign_day.get()
+        signdate = sign_year_form+'-'+sign_month_form+'-'+sign_day_form
 
-       sign_year_form = clicked_sign_year.get()
-       sign_month_form = clicked_sign_month.get()
-       sign_day_form = clicked_sign_day.get()
-       signdate = sign_year_form+'-'+sign_month_form+'-'+sign_day_form
+        if forename == "" or surname == "" or email == "" or phone == "" or address == "":
+            messagebox.showerror(title="Blank Fields", message="Please fill all fields to continue.")
+        else:
+            cursor.execute('INSERT INTO Clients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (id, forename, surname, email, phone, address, birthday, gender, signdate))
+            conn.commit()
 
-       if forename == "" or surname == "" or email == "" or phone == "" or address == "":
-           messagebox.showerror(title="Blank Fields", message="Please fill all fields to continue.")
-       else:
-           cursor.execute('INSERT INTO Clients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (id, forename, surname, email, phone, address, birthday, gender, signdate))
-           conn.commit()
-
-           forename_form.delete(0, "end")
-           surname_form.delete(0, "end")
-           email_form.delete(0, "end")
-           phone_form.delete(0, "end")
-           address_form.delete(0, "end")
-           gender_radio.set(4)
+        forename_form.delete(0, "end")
+        surname_form.delete(0, "end")
+        email_form.delete(0, "end")
+        phone_form.delete(0, "end")
+        address_form.delete(0, "end")
+        gender_radio.set(4)
 
 def addNewClient():
 
